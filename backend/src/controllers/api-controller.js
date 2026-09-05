@@ -74,14 +74,35 @@ export async function getPortfolioController(request, response) {
     ? await runDatabase(() => findLatestPortfolioRecord(request.user.id))
     : null
   const portfolio = toPortfolioConfiguration(stored) || demoPortfolio
-  response.json({ success: true, data: runEngine(() => getPortfolioData(portfolio)) })
+  response.json({ 
+    success: true, 
+    data: {
+      ...runEngine(() => getPortfolioData(portfolio)),
+      isConfigured: !!stored
+    } 
+  })
 }
 
 export async function savePortfolioController(request, response) {
   const body = requireBody(request)
-  const portfolio = getPortfolio(body)
+  let portfolio = getPortfolio(body)
+
+  // Support partial updates (e.g., just { totalCapital: 1000000 }) by merging with existing/demo portfolio
+  if (!portfolio.allocations || typeof portfolio.allocations !== 'object') {
+    const stored = isDatabaseConfigured() ? await runDatabase(() => findLatestPortfolioRecord(request.user.id)) : null
+    const existing = toPortfolioConfiguration(stored) || demoPortfolio
+    portfolio = { ...existing, ...portfolio }
+  }
+
   const saved = await runDatabase(() => savePortfolioRecord(portfolio, request.user.id))
-  response.status(201).json({ success: true, data: saved })
+  
+  response.status(201).json({ 
+    success: true, 
+    data: {
+      ...runEngine(() => getPortfolioData(toPortfolioConfiguration(saved))),
+      isConfigured: true
+    }
+  })
 }
 
 export async function saveAnalysisController(request, response) {
@@ -96,6 +117,44 @@ export async function analysisHistoryController(request, response) {
 export async function saveScenarioResultController(request, response) {
   const body = requireBody(request)
   response.status(201).json({ success: true, data: await runDatabase(() => saveScenarioResultRecord(body, request.user.id)) })
+}
+
+import { getMarketSnapshot, getPreviousMarketSnapshot } from '../market-data/marketDataService.js'
+import { detectMarketChanges } from '../market-data/marketChangeDetector.js'
+import { generateMarketResponse } from '../control-engine/marketResponseService.js'
+
+export async function getMarketDataController(request, response) {
+  try {
+    const marketData = await getMarketSnapshot()
+    response.json({ success: true, data: marketData })
+  } catch (error) {
+    throw new ApiError(500, 'MARKET_DATA_ERROR', 'Failed to retrieve market data.')
+  }
+}
+
+export async function getMarketResponseController(request, response) {
+  try {
+    // 1. Get current market snapshot
+    const currentMarket = await getMarketSnapshot()
+    // 2. Get previous market snapshot
+    const prevMarket = await getPreviousMarketSnapshot()
+    
+    // 3. Detect changes
+    const detection = detectMarketChanges(prevMarket, currentMarket)
+    
+    // 4. Evaluate portfolio
+    const stored = isDatabaseConfigured()
+      ? await runDatabase(() => findLatestPortfolioRecord(request.user.id))
+      : null
+    const portfolio = toPortfolioConfiguration(stored) || demoPortfolio
+    
+    // 5-9. Run Risk, Determine response, Generate recommendation
+    const marketResponse = generateMarketResponse(portfolio, detection.status, detection.changes, detection.events)
+
+    response.json({ success: true, data: { ...marketResponse, market: currentMarket } })
+  } catch (error) {
+    throw new ApiError(500, 'MARKET_RESPONSE_ERROR', 'Failed to evaluate market response.')
+  }
 }
 
 export async function scenarioHistoryController(request, response) {

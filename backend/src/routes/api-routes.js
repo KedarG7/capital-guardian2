@@ -15,11 +15,15 @@ import {
   saveControlDecisionController,
   controlHistoryController,
   explainController,
+  getMarketDataController,
+  getMarketResponseController,
 } from '../controllers/api-controller.js'
 import { asyncHandler } from '../middleware/async-handler.js'
 
 const router = Router()
 
+router.get('/market-data', asyncHandler(getMarketDataController))
+router.get('/market-response', asyncHandler(getMarketResponseController))
 router.get('/portfolio', asyncHandler(getPortfolioController))
 router.post('/portfolio', asyncHandler(savePortfolioController))
 router.post('/optimize', optimizeController)

@@ -32,6 +32,9 @@ function post(path, body) {
 }
 
 export const getPortfolio = () => request('/portfolio')
+export const savePortfolio = (portfolio) => post('/portfolio', portfolio)
+export const getMarketData = () => request('/market-data')
+export const getMarketResponse = () => request('/market-response')
 export const getScenarios = () => request('/scenarios')
 export const optimizePortfolio = (portfolio) => post('/optimize', portfolio)
 export const assessRisk = (portfolio) => post('/risk', portfolio)
@@ -43,6 +46,8 @@ export const generateControlRecommendation = (portfolio, riskAssessment, shocked
 })
 export const runFullAnalysis = (portfolio) => post('/analyze', portfolio)
 export const getExplanation = (result) => post('/explain', result)
+export const getControlHistory = () => request('/control/history')
+export const saveControlDecision = (decision) => post('/control/history', decision)
 export const login = (credentials) => post('/auth/login', credentials)
 export const register = (credentials) => post('/auth/register', credentials)
 export const getCurrentUser = () => request('/auth/me')
