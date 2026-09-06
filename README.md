@@ -48,6 +48,8 @@ capital-guardian/
 
 ## Installation
 
+Copy `.env.example` to `.env` in the repository root, then set `MONGODB_URI`, `JWT_SECRET`, SMTP, and Google OAuth values.
+
 Install dependencies in each application folder:
 
 ```bash
@@ -58,7 +60,7 @@ cd ../backend
 npm install
 ```
 
-Run the complete backend regression suite with `npm.cmd --prefix backend test`. The frontend has no lint script configured; build it with `npm.cmd --prefix frontend run build`.
+Run the complete backend regression suite with `npm test` from the repository root. Build the frontend with `npm run build`.
 
 ## Run the frontend
 
@@ -76,14 +78,14 @@ cd backend
 npm run dev
 ```
 
-The backend listens on port `5001` by default in this workspace. Set `PORT` in a local `.env` file if needed. MongoDB is not required to start the server.
+The backend listens on port `5001` by default. Set `PORT` in the root `.env` file if needed. MongoDB is required for authentication, onboarding, and history.
 
 ## Health endpoint
 
 With the backend running, request:
 
 ```text
-GET http://localhost:5000/api/health
+GET http://localhost:5001/api/health
 ```
 
 Expected response:
@@ -139,6 +141,16 @@ The control engine is available from `backend/src/control-engine/control-rebalan
 Every recommendation is validated, recalculated, and reassessed by the existing Step 1, Step 2, and Step 4 engines. Results include before/after metrics, per-asset changes, risk/liquidity/return impact, and deterministic explanations. Impossible constraints return a structured failure and no invented allocation.
 
 This is a simplified deterministic hackathon prototype. It does not execute trades and does not provide financial or investment advice.
+
+## Deployment
+
+The React client and Express API are hosted independently.
+
+1. Deploy `backend/` to a Node host such as Render. Start with `npm start`, health-check `/api/health`, or use `backend/Dockerfile`.
+2. Set production values from `.env.example`: `MONGODB_URI`, `JWT_SECRET`, `FRONTEND_URL`, Google OAuth, and SMTP.
+3. Set `GOOGLE_REDIRECT_URI` to `https://<api-host>/api/auth/google/callback` and register that URI in Google Cloud.
+4. Deploy `frontend/` to Vercel or another static host. At build time set `VITE_API_URL=https://<api-host>/api`.
+5. Keep `FRONTEND_URL` equal to the live frontend origin. Comma-separate extra preview origins if needed.
 
 ## Backend API
 

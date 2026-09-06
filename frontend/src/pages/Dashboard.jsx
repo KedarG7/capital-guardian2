@@ -95,6 +95,7 @@ function Dashboard({ user, onLogout }) {
   const [records, setRecords] = useState({ analysis: [], simulations: [], controls: [] })
   const [loading, setLoading] = useState({ portfolio: true })
   const [error, setError] = useState('')
+  const [activeSection, setActiveSection] = useState(() => window.location.hash.replace('#', '') || 'overview')
 
   const portfolio = portfolioData?.configuration
   const metrics = portfolioData?.metrics
@@ -103,6 +104,12 @@ function Dashboard({ user, onLogout }) {
     ...asset,
     color: assetColors[asset.assetId] || '#94a3b8',
   })), [metrics])
+
+  useEffect(() => {
+    const syncSection = () => setActiveSection(window.location.hash.replace('#', '') || 'overview')
+    window.addEventListener('hashchange', syncSection)
+    return () => window.removeEventListener('hashchange', syncSection)
+  }, [])
 
   useEffect(() => {
     Promise.all([getPortfolio(), getScenarios()])
@@ -176,12 +183,13 @@ function Dashboard({ user, onLogout }) {
       <header className="topbar">
         <a className="brand" href="#overview"><span className="brand-mark">CG</span><span>Capital Guardian</span></a>
         <nav className="nav-links" aria-label="Dashboard sections">
-          <a className="active" href="#overview">Overview</a>
-          <a href="#optimization">Optimization</a>
-          <a href="#what-if">What-If</a>
-          <a href="#controls">Controls</a>
+          <a className={activeSection === 'overview' ? 'active' : ''} href="#overview">Overview</a>
+          <a className={activeSection === 'optimization' ? 'active' : ''} href="#optimization">Optimization</a>
+          <a className={activeSection === 'what-if' ? 'active' : ''} href="#what-if">What-If</a>
+          <a className={activeSection === 'controls' ? 'active' : ''} href="#controls">Controls</a>
+          <a className={activeSection === 'profile' ? 'active' : ''} href="#profile">Profile</a>
         </nav>
-        <div className="topbar-meta"><span className="live-dot" />System online <span className="demo-tag">{user?.name || user?.email}</span><button className="logout-button" type="button" onClick={onLogout}>Sign out</button></div>
+        <div className="topbar-meta"><span className="session-status"><span className="live-dot" />System online</span> <span className="demo-tag">{profileName || user?.email}</span><button className="logout-button" type="button" onClick={onLogout}>Sign out</button></div>
       </header>
 
       {error ? <div className="error-banner" role="alert"><strong>Action unavailable.</strong> {error}<button onClick={() => setError('')} type="button">Dismiss</button></div> : null}
@@ -189,12 +197,12 @@ function Dashboard({ user, onLogout }) {
       <main>
         <section className="hero" id="overview">
           <div>
-            <span className="eyebrow">Capital control workspace / 06 Sep 2026</span>
+            <span className="eyebrow">Capital control workspace / {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
             <h1>See the whole<br /><em>capital picture.</em></h1>
             <p>Optimize capital. Detect risk. Simulate shocks. Recommend action.</p>
           </div>
           <div className="hero-actions">
-            <span className="hero-note">Simulated portfolio<br /><strong>₹1 crore mandate</strong></span>
+            <span className="hero-note">Simulated portfolio<br /><strong>{amount(portfolio.totalCapital)} mandate</strong></span>
             <ActionButton loading={loading.analysis} onClick={() => runAction('analysis', async () => { const result = await runFullAnalysis(portfolio); await saveAnalysis(result); return { result, explanation: await getExplanation(result) } }, ({ result, explanation: nextExplanation }) => { setAnalysis(result); setOptimization(result.optimization); setControl(result.control); setExplanation(nextExplanation); getAnalysisHistory().then((history) => setRecords((current) => ({ ...current, analysis: history }))) })}>Run Full Analysis</ActionButton>
           </div>
         </section>
@@ -256,7 +264,7 @@ function Dashboard({ user, onLogout }) {
           <div className="control-intro"><div><p className="panel-copy">Translate a detected breach into a verified allocation recommendation. No trades are executed.</p><ActionButton loading={loading.control} onClick={() => runAction('control', async () => { const result = await generateControlRecommendation(portfolio, currentRisk, simulation); await saveControl(result); return { result, explanation: await getExplanation(result) } }, ({ result, explanation: nextExplanation }) => { setControl(result); setExplanation(nextExplanation) })}>Generate Control Recommendation</ActionButton></div>{control ? <div className="control-action"><span className="eyebrow">Control action</span><strong>{control.controlAction.replaceAll('_', ' ')}</strong></div> : null}</div>
           {control?.recommended ? <div className="control-result"><div className="control-metrics"><span>Risk change <b className={control.impact.riskChange <= 0 ? 'positive' : 'negative'}>{signedPercent(control.impact.riskChange)}</b></span><span>Liquidity change <b className={control.impact.liquidityChange >= 0 ? 'positive' : 'negative'}>{signedPercent(control.impact.liquidityChange)}</b></span><span>Return difference <b>{signedPercent(control.impact.returnChange)}</b></span></div><AllocationChanges changes={control.changes} /><MonteCarloCard result={control.monteCarlo} /><div className="explanation"><span className="eyebrow">Why this decision</span><strong>{control.explanation.summary}</strong>{control.explanation.reasons.map((reason, index) => <p key={index}>{reason}</p>)}</div></div> : control ? <div className="failure-note">{control.explanation.summary}<br />{control.validation.message}</div> : null}
         </section>
-        <section className="panel profile-panel"><SectionHeading kicker="Profile & records" title="Manage your plan and report" /><div className="profile-actions"><form onSubmit={(event) => { event.preventDefault(); runAction('profile', () => updateCurrentUser({ name: profileName }), () => {}) }}><input value={profileName} onChange={(event) => setProfileName(event.target.value)} aria-label="Profile name" /><ActionButton loading={loading.profile} onClick={() => runAction('profile', () => updateCurrentUser({ name: profileName }), () => {})}>Update profile</ActionButton></form><ActionButton loading={loading.report} tone="outline" onClick={() => runAction('report', () => downloadReport({ portfolio, analysis, simulation, control }), () => {})}>Download PDF report</ActionButton><button className="danger-button" type="button" onClick={async () => { if (window.confirm('Delete your profile? This cannot be undone.')) { await deleteCurrentUser(); onLogout() } }}>Delete profile</button></div><PortfolioEditor portfolio={portfolio} onSave={(nextPortfolio) => runAction('portfolio', async () => { await savePortfolio(nextPortfolio); return getPortfolio() }, setPortfolioData)} /><SavedRecords records={records} /></section>
+        <section className="panel profile-panel" id="profile"><SectionHeading kicker="Profile & records" title="Manage your plan and report" /><div className="profile-actions"><form onSubmit={(event) => { event.preventDefault(); runAction('profile', () => updateCurrentUser({ name: profileName }), (result) => { if (result?.user?.name) setProfileName(result.user.name) }) }}><input value={profileName} onChange={(event) => setProfileName(event.target.value)} aria-label="Profile name" /><ActionButton loading={loading.profile} onClick={() => runAction('profile', () => updateCurrentUser({ name: profileName }), (result) => { if (result?.user?.name) setProfileName(result.user.name) })}>Update profile</ActionButton></form><ActionButton loading={loading.report} tone="outline" onClick={() => runAction('report', () => downloadReport({ portfolio, analysis, simulation, control }), () => {})}>Download PDF report</ActionButton><button className="danger-button" type="button" onClick={async () => { if (window.confirm('Delete your profile? This cannot be undone.')) { await deleteCurrentUser(); onLogout() } }}>Delete profile</button></div><PortfolioEditor portfolio={portfolio} onSave={(nextPortfolio) => runAction('portfolio', async () => { await savePortfolio(nextPortfolio); return getPortfolio() }, setPortfolioData)} /><SavedRecords records={records} /></section>
         <ExplanationCard explanation={explanation} />
         <MarketOptimizationSection market={market} portfolio={portfolio} optimization={optimization} />
       </main>

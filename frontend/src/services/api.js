@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
+export const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5001/api').replace(/\/$/, '')
 
 async function request(path, options = {}) {
   const token = localStorage.getItem('token')
@@ -47,6 +47,9 @@ export const runFullAnalysis = (portfolio) => post('/analyze', portfolio)
 export const getExplanation = (result) => post('/explain', result)
 export const login = (credentials) => post('/auth/login', credentials)
 export const register = (credentials) => post('/auth/register', credentials)
+export const requestLoginOtp = (credentials) => post('/auth/login/request-otp', credentials)
+export const resendRegistrationOtp = (email) => post('/auth/register/resend-otp', { email })
+export const verifyOtp = (payload) => post('/auth/verify-otp', payload)
 export const getCurrentUser = () => request('/auth/me')
 export const updateCurrentUser = (profile) => patch('/auth/me', profile)
 export const deleteCurrentUser = () => request('/auth/me', { method: 'DELETE' })

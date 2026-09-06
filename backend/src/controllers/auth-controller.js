@@ -1,5 +1,15 @@
+import { getFrontendUrl } from '../config/environment.js'
 import { ApiError } from '../middleware/error-handler.js'
-import { deleteUser, loginUser, registerUser, updateUser } from '../services/auth-service.js'
+import { createGoogleAuthorization, deleteUser, googleLogin, loginUser, registerUser, requestLoginOtp, requestRegistrationOtp, updateUser, verifyOtp } from '../services/auth-service.js'
+
+function oauthCookie(value, maxAge) {
+  const secure = getFrontendUrl().startsWith('https') || process.env.NODE_ENV === 'production' ? '; Secure' : ''
+  return `oauth_state=${value}; Max-Age=${maxAge}; Path=/api/auth; HttpOnly; SameSite=Lax${secure}`
+}
+
+function frontendRedirect(path) {
+  return `${getFrontendUrl()}${path}`
+}
 
 function requireBody(request) {
   if (!request.body || typeof request.body !== 'object' || Array.isArray(request.body)) {
@@ -40,6 +50,42 @@ export async function loginController(request, response) {
     response.json({ success: true, data: result })
   } catch (error) {
     throw translateAuthError(error)
+  }
+}
+
+export async function requestLoginOtpController(request, response) {
+  try { response.json({ success: true, data: await requestLoginOtp(requireBody(request)) }) } catch (error) { throw translateAuthError(error) }
+}
+
+export async function requestRegistrationOtpController(request, response) {
+  try { response.json({ success: true, data: await requestRegistrationOtp(requireBody(request)) }) } catch (error) { throw translateAuthError(error) }
+}
+
+export async function verifyOtpController(request, response) {
+  try { response.json({ success: true, data: await verifyOtp(requireBody(request)) }) } catch (error) { throw translateAuthError(error) }
+}
+
+export function googleStartController(_request, response) {
+  try {
+    const { authorizationUrl, state } = createGoogleAuthorization()
+    response.setHeader('Set-Cookie', oauthCookie(encodeURIComponent(state), 600))
+    response.redirect(302, authorizationUrl)
+  } catch (error) {
+    response.redirect(302, frontendRedirect(`/?oauth_error=${encodeURIComponent(error.message)}`))
+  }
+}
+
+export async function googleCallbackController(request, response) {
+  try {
+    const cookies = Object.fromEntries((request.headers.cookie || '').split(';').filter(Boolean).map((part) => {
+      const [key, ...value] = part.trim().split('=')
+      return [key, decodeURIComponent(value.join('='))]
+    }))
+    const result = await googleLogin({ code: request.query.code, state: request.query.state, stateCookie: cookies.oauth_state })
+    response.setHeader('Set-Cookie', oauthCookie('', 0))
+    response.redirect(302, frontendRedirect(`/#oauth_token=${encodeURIComponent(result.token)}`))
+  } catch (_error) {
+    response.redirect(302, frontendRedirect('/?oauth_error=' + encodeURIComponent('Google sign-in could not be completed.')))
   }
 }
 
