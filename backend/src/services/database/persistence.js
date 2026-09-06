@@ -37,15 +37,21 @@ export async function savePortfolioRecord(portfolio, userId) {
   validatePortfolio(portfolio, assetConfiguration)
   await connectDatabase()
 
-  const record = await Portfolio.create({
-    userId,
+  const updateData = {
     totalCapital: portfolio.totalCapital,
     maximumRisk: portfolio.maximumRisk,
     minimumLiquidity: portfolio.minimumLiquidity,
     targetReturn: portfolio.targetReturn,
     allocations: portfolio.allocations,
     assets: portfolioAssets(),
-  })
+  }
+
+  // UPDATE existing or create if not exists
+  const record = await Portfolio.findOneAndUpdate(
+    { userId },
+    { $set: updateData },
+    { new: true, upsert: true }
+  )
 
   return plain(record)
 }
@@ -143,4 +149,95 @@ export async function saveControlDecisionRecord(payload, userId) {
 export async function listControlHistory(userId) {
   await connectDatabase()
   return (await ControlDecision.find({ userId }).sort({ createdAt: -1 }).limit(20)).map(plain)
+}
+
+import { Alert } from '../../models/persistence/Alert.js'
+
+export async function saveAlertRecord(alertData, userId) {
+  await connectDatabase()
+  
+  // Use eventId to prevent duplicates
+  // We use findOneAndUpdate with upsert to insert ONLY if it doesn't exist
+  // We setONInsert to preserve original data and not overwrite it if it exists
+  const record = await Alert.findOneAndUpdate(
+    { userId, eventId: alertData.eventId },
+    { $setOnInsert: { ...alertData, userId } },
+    { upsert: true, new: true }
+  )
+  return plain(record)
+}
+
+export async function listAlerts(userId) {
+  await connectDatabase()
+  return (await Alert.find({ userId }).sort({ createdAt: -1 }).limit(50)).map(plain)
+}
+
+export async function markAlertRead(alertId, userId) {
+  await connectDatabase()
+  const record = await Alert.findOneAndUpdate(
+    { _id: alertId, userId },
+    { $set: { read: true } },
+    { new: true }
+  )
+  return plain(record)
+}
+
+import { DecisionHistory } from '../../models/DecisionHistory.js'
+
+export async function saveDecisionHistoryRecord(decisionData, userId) {
+  await connectDatabase()
+  
+  const record = await DecisionHistory.findOneAndUpdate(
+    { userId, eventId: decisionData.eventId },
+    { $setOnInsert: { ...decisionData, userId } },
+    { upsert: true, new: true }
+  )
+  return plain(record)
+}
+
+export async function updateDecisionExplanation(eventId, userId, explanation) {
+  await connectDatabase()
+  const record = await DecisionHistory.findOneAndUpdate(
+    { eventId, userId },
+    { $set: { explanation } },
+    { new: true }
+  )
+  return plain(record)
+}
+
+export async function listDecisionHistory(userId, { page = 1, limit = 50, filters = {} } = {}) {
+  await connectDatabase()
+  
+  const query = { userId }
+  
+  if (filters.riskStatus && filters.riskStatus !== 'ALL') {
+    query['riskAssessment.status'] = filters.riskStatus
+  }
+  if (filters.mode && filters.mode !== 'ALL') {
+    query['mode'] = filters.mode
+  }
+  
+  const skip = (page - 1) * limit
+  
+  const records = await DecisionHistory.find(query)
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    
+  const total = await DecisionHistory.countDocuments(query)
+  
+  return {
+    decisions: records.map(plain),
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit)
+    }
+  }
+}
+
+export async function getDecisionHistory(decisionId, userId) {
+  await connectDatabase()
+  return plain(await DecisionHistory.findOne({ _id: decisionId, userId }))
 }

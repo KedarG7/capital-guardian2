@@ -5,6 +5,9 @@ import EditableCapitalCard from '../components/dashboard/EditableCapitalCard.jsx
 import StatusPill from '../components/dashboard/StatusPill.jsx'
 import { SectionHeading, ActionButton, percent, amount } from '../components/dashboard/Shared.jsx'
 
+import AlertBanner from '../components/dashboard/AlertBanner.jsx'
+import MarketGuardianSection from '../components/dashboard/MarketGuardianSection.jsx'
+
 export default function Overview({ 
   portfolio, 
   currentRisk, 
@@ -22,8 +25,12 @@ export default function Overview({
   clearDependentState,
   marketData,
   marketResponse,
-  marketError
+  marketError,
+  alerts,
+  markAlertRead
 }) {
+  const unreadAlerts = (alerts || []).filter(a => !a.read)
+
   return (
     <>
       <section className="hero">
@@ -40,7 +47,7 @@ export default function Overview({
               async () => { 
                 const { runFullAnalysis, getExplanation } = await import('../services/api.js');
                 const result = await runFullAnalysis(portfolio); 
-                return { result, explanation: await getExplanation(result) } 
+                return { result, explanation: await getExplanation({ type: 'ANALYSIS' }) } 
               }, 
               ({ result, explanation: nextExplanation }) => { 
                 setAnalysis(result); 
@@ -55,70 +62,27 @@ export default function Overview({
         </div>
       </section>
 
-      {analysis ? (
-        <div className="analysis-banner">
-          <div>
-            <span className="eyebrow">Full analysis complete</span>
-            <strong>{analysis.control.controlAction.replaceAll('_', ' ')}</strong>
-          </div>
-          <StatusPill status={analysis.risk.status} />
-          <button type="button" onClick={() => setAnalysis(null)}>Clear</button>
+      {unreadAlerts.length > 0 ? (
+        <div className="alerts-container">
+          {unreadAlerts.map(alert => (
+            <AlertBanner key={alert._id} alert={alert} onDismiss={markAlertRead} />
+          ))}
         </div>
-      ) : null}
+      ) : (
+        <div className="mb-6 rounded-xl border border-gray-100 bg-white p-4 shadow-sm flex items-center gap-3">
+          <span className="text-green-500 font-bold text-lg leading-none">✓</span>
+          <span className="text-sm font-medium text-gray-700 uppercase tracking-wider">No active risk alerts</span>
+        </div>
+      )}
 
-      <AnimatedPortfolioMonitor 
-        portfolio={portfolio}
-        currentRisk={currentRisk}
-        currentMetrics={currentMetrics}
-        assets={assets}
+      <MarketGuardianSection 
         marketData={marketData}
         marketResponse={marketResponse}
         marketError={marketError}
+        currentRisk={currentRisk}
+        currentCapital={portfolio.totalCapital}
+        setExplanation={setExplanation}
       />
-
-      <section className="panel mb-8 p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4">
-          <SectionHeading kicker="External Context" title="Current Market Conditions" />
-          <div className="flex items-center text-xs mt-2 sm:mt-0 space-x-4">
-            <div className="flex items-center">
-              <span className="text-gray-500 mr-2 uppercase tracking-wider font-semibold">Market Data</span>
-              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full font-medium ${
-                marketError ? 'bg-red-50 text-red-700' :
-                marketData?.mode === 'live' ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'
-              }`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${
-                  marketError ? 'bg-red-500' :
-                  marketData?.mode === 'live' ? 'bg-green-500 animate-pulse' : 'bg-blue-500'
-                }`} />
-                {marketError ? 'FALLBACK' : marketData?.mode === 'live' ? 'LIVE' : 'DEMO'}
-              </span>
-            </div>
-            {marketData?.timestamp && (
-              <span className="text-gray-400">
-                Last updated: {new Date(marketData.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {marketError && !marketData ? (
-          <div className="text-red-600 text-sm">Live market data is temporarily unavailable. Capital Guardian is using demo market data.</div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {marketData?.assets.map((asset) => (
-              <div key={asset.assetId} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="font-medium text-gray-700">{asset.name}</span>
-                <span className={`font-semibold ${
-                  asset.dailyChangePercent > 0 ? 'text-green-600' : 
-                  asset.dailyChangePercent < 0 ? 'text-red-600' : 'text-gray-600'
-                }`}>
-                  {asset.dailyChangePercent > 0 ? '+' : ''}{asset.dailyChangePercent.toFixed(2)}%
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
 
       <section className="metric-grid">
         <EditableCapitalCard 

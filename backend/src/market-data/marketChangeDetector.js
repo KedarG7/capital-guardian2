@@ -6,46 +6,82 @@ export const marketChangeThresholds = {
 
 export function detectMarketChanges(previousSnapshot, currentSnapshot) {
   if (!previousSnapshot || !currentSnapshot) {
-    return { status: 'INSUFFICIENT_HISTORY', changes: [], events: [] }
+    return { detected: false, severity: 'STABLE', direction: 'STABLE', status: 'INSUFFICIENT_HISTORY', changes: [], events: [], affectedAssets: [] }
   }
 
-  const prevAssets = Object.fromEntries(previousSnapshot.assets.map(a => [a.assetId, a]))
+  // The normalizer already provides changePercent directly on currentSnapshot in Step 1.
+  // We can just rely on that if available, otherwise compute it.
   
   const changes = currentSnapshot.assets.map(current => {
-    const prev = prevAssets[current.assetId]
-    if (!prev || !prev.marketValue) {
-      return { assetId: current.assetId, name: current.name, changePercent: 0, severity: 'STABLE' }
+    let changePercent = current.changePercent
+    if (changePercent === undefined) {
+      const prevAssets = Object.fromEntries(previousSnapshot.assets.map(a => [a.assetId, a]))
+      const prev = prevAssets[current.assetId]
+      if (!prev || !prev.marketValue) {
+        changePercent = 0
+      } else {
+        changePercent = ((current.marketValue - prev.marketValue) / prev.marketValue) * 100
+      }
     }
-
-    const changePercent = ((current.marketValue - prev.marketValue) / prev.marketValue) * 100
-    const absChange = Math.abs(changePercent)
     
+    // Safety against NaN / Infinity
+    if (!Number.isFinite(changePercent)) changePercent = 0
+
+    const absChange = Math.abs(changePercent)
     let severity = 'STABLE'
     if (absChange >= marketChangeThresholds.significant) severity = 'EXTREME'
     else if (absChange >= marketChangeThresholds.notice) severity = 'SIGNIFICANT'
     else if (absChange >= marketChangeThresholds.stable) severity = 'NOTICE'
 
+    let direction = 'STABLE'
+    if (changePercent > 0) direction = 'UP'
+    if (changePercent < 0) direction = 'DOWN'
+
     return {
       assetId: current.assetId,
-      name: current.name,
+      assetName: current.name || current.assetName,
+      previousValue: current.previousValue ?? 0,
+      currentValue: current.currentValue ?? current.marketValue ?? 0,
       changePercent,
-      severity
+      severity,
+      direction,
+      name: current.name || current.assetName // backwards compat
     }
   })
 
+  const affectedAssets = changes.filter(c => Math.abs(c.changePercent) >= marketChangeThresholds.stable)
+  
+  let overallSeverity = 'STABLE'
+  if (affectedAssets.some(a => a.severity === 'EXTREME')) overallSeverity = 'EXTREME'
+  else if (affectedAssets.some(a => a.severity === 'SIGNIFICANT')) overallSeverity = 'SIGNIFICANT'
+  else if (affectedAssets.some(a => a.severity === 'NOTICE')) overallSeverity = 'NOTICE'
+
+  const hasUp = affectedAssets.some(a => a.direction === 'UP')
+  const hasDown = affectedAssets.some(a => a.direction === 'DOWN')
+  let overallDirection = 'STABLE'
+  if (hasUp && hasDown) overallDirection = 'MIXED'
+  else if (hasUp) overallDirection = 'UP'
+  else if (hasDown) overallDirection = 'DOWN'
+
   const events = detectEvents(changes)
   
-  // Aggregate status based on worst severity or highest change
-  const isExtreme = changes.some(c => c.severity === 'EXTREME')
-  const isSignificant = changes.some(c => c.severity === 'SIGNIFICANT')
-  const isNotice = changes.some(c => c.severity === 'NOTICE')
-  
-  const status = isExtreme ? 'EXTREME_CHANGE' 
-    : isSignificant ? 'SIGNIFICANT_CHANGE' 
-    : isNotice ? 'NOTICE_CHANGE' 
+  const status = overallSeverity === 'EXTREME' ? 'EXTREME_CHANGE' 
+    : overallSeverity === 'SIGNIFICANT' ? 'SIGNIFICANT_CHANGE' 
+    : overallSeverity === 'NOTICE' ? 'NOTICE_CHANGE' 
     : 'STABLE'
 
-  return { status, changes, events }
+  return { 
+    detected: affectedAssets.length > 0,
+    severity: overallSeverity,
+    direction: overallDirection,
+    timestamp: currentSnapshot.timestamp || new Date().toISOString(),
+    affectedAssets,
+    summary: affectedAssets.length > 0 ? 'Significant market movement detected.' : 'Market conditions are stable.',
+    // Backwards compatibility fields
+    status, 
+    changes, 
+    events 
+  }
 }
 
 function detectEvents(changes) {

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
-import { getPortfolio, getScenarios, getExplanation, getMarketData, getMarketResponse } from '../../services/api.js'
+import { getPortfolio, getScenarios, getExplanation, getMarketData, getMarketResponse, getAlerts, markAlertRead } from '../../services/api.js'
 import { ExplanationCard } from '../dashboard/Shared.jsx'
 import Overview from '../../pages/Overview.jsx'
 import Optimization from '../../pages/Optimization.jsx'
 import WhatIf from '../../pages/WhatIf.jsx'
 import Controls from '../../pages/Controls.jsx'
+import DecisionHistory from '../../pages/DecisionHistory.jsx'
 import Onboarding from '../../pages/Onboarding.jsx'
 
 const assetColors = {
@@ -24,6 +25,7 @@ export default function AppShell({ user, onLogout, view, navigate }) {
   const [control, setControl] = useState(null)
   const [analysis, setAnalysis] = useState(null)
   const [explanation, setExplanation] = useState(null)
+  const [alerts, setAlerts] = useState([])
   const [loading, setLoading] = useState({ portfolio: true })
   const [error, setError] = useState('')
 
@@ -44,7 +46,6 @@ export default function AppShell({ user, onLogout, view, navigate }) {
       .then(([portfolioResult, scenarioResult]) => {
         setPortfolioData(portfolioResult)
         setScenarios(scenarioResult)
-        getExplanation(portfolioResult.risk).then(setExplanation).catch(() => {})
         if (scenarioResult[0]) {
           setSelectedScenario(scenarioResult[0].name)
           setShockDraft(Object.fromEntries(scenarioResult[0].shocks.map((shock) => [
@@ -55,14 +56,31 @@ export default function AppShell({ user, onLogout, view, navigate }) {
       })
       .catch((requestError) => setError(requestError.message))
       .finally(() => setLoading((current) => ({ ...current, portfolio: false })))
-      
-    // Fetch market response to get both data and intelligent response
-    getMarketResponse()
-      .then((res) => {
-        setMarketData(res.market)
-        setMarketResponse(res)
-      })
-      .catch((err) => setMarketError(err.message))
+    let intervalId
+    const fetchMarket = () => {
+      if (document.visibilityState !== 'visible') return
+      getMarketResponse()
+        .then((res) => {
+          setMarketData(res.market)
+          setMarketResponse(res)
+          return getAlerts()
+        })
+        .then(setAlerts)
+        .catch((err) => setMarketError(err.message))
+    }
+    
+    fetchMarket()
+    intervalId = setInterval(fetchMarket, 30000)
+    
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') fetchMarket()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    return () => {
+      clearInterval(intervalId)
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
   }, [])
 
   const runAction = async (name, action, onSuccess) => {
@@ -111,6 +129,15 @@ export default function AppShell({ user, onLogout, view, navigate }) {
     marketData,
     marketResponse,
     marketError,
+    alerts,
+    markAlertRead: async (id) => {
+      try {
+        await markAlertRead(id)
+        setAlerts(alerts.map(a => a._id === id ? { ...a, read: true } : a))
+      } catch (e) {
+        console.error('Failed to mark alert read', e)
+      }
+    },
     runAction,
     setExplanation,
     setControl,
@@ -165,6 +192,7 @@ export default function AppShell({ user, onLogout, view, navigate }) {
           <a className={view === 'optimization' ? 'active' : ''} href="/optimization" onClick={(e) => handleNav(e, 'optimization')}>Optimization</a>
           <a className={view === 'what-if' ? 'active' : ''} href="/what-if" onClick={(e) => handleNav(e, 'what-if')}>What-If</a>
           <a className={view === 'controls' ? 'active' : ''} href="/controls" onClick={(e) => handleNav(e, 'controls')}>Controls</a>
+          <a className={view === 'decision-history' ? 'active' : ''} href="/decision-history" onClick={(e) => handleNav(e, 'decision-history')}>Decision History</a>
         </nav>
         <div className="topbar-meta hidden md:flex">
           <span className="live-dot" />System online 
@@ -222,6 +250,10 @@ export default function AppShell({ user, onLogout, view, navigate }) {
             control={control}
             setControl={setControl}
           />
+        )}
+        
+        {view === 'decision-history' && (
+          <DecisionHistory navigate={navigate} />
         )}
 
         {/* Global Explanation rendering: show at bottom if it exists */}

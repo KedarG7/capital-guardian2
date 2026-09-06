@@ -8,7 +8,8 @@ export default function Optimization({
   runAction,
   setOptimization,
   setExplanation,
-  explanation
+  explanation,
+  marketResponse
 }) {
   return (
     <div className="max-w-4xl mx-auto pt-6 pb-12">
@@ -21,7 +22,7 @@ export default function Optimization({
             async () => { 
               const { optimizePortfolio, getExplanation } = await import('../services/api.js');
               const result = await optimizePortfolio(portfolio); 
-              return { result, explanation: await getExplanation(result) } 
+              return { result, explanation: await getExplanation({ type: 'OPTIMIZATION' }) } 
             }, 
             ({ result, explanation: nextExplanation }) => { 
               setOptimization(result); 
@@ -34,7 +35,7 @@ export default function Optimization({
         {optimization ? (
           <div className="result-block">
             <div className="result-title">
-              <span>Recommended allocation</span>
+              <span>{optimization.source === 'MARKET_GUARDIAN' ? 'Market Guardian Recommendation' : 'Manual Optimization'}</span>
               <span className="result-state">Constraints checked</span>
             </div>
             {Object.entries(optimization.allocation).map(([assetId, value]) => (
@@ -51,11 +52,28 @@ export default function Optimization({
               <span>Score <b>{optimization.metrics.riskAdjustedScore.toFixed(2)}</b></span>
             </div>
           </div>
+        ) : marketResponse?.recommendationData?.recommended ? (
+          <div className="result-block mt-8">
+            <div className="result-title">
+              <span>Market Guardian Recommendation</span>
+              <span className="result-state">Constraints checked</span>
+            </div>
+            {Object.entries(marketResponse.recommendationData.recommended.allocation).map(([assetId, value]) => (
+              <div className="bar-row" key={assetId}>
+                <span>{assetId}</span>
+                <div className="mini-bar"><i style={{ width: `${value * 100}%` }} /></div>
+                <strong>{percent(value)}</strong>
+              </div>
+            ))}
+            <div className="result-metrics">
+              <span>Return <b>{percent(marketResponse.recommendationData.recommended.expectedReturn)}</b></span>
+              <span>Risk <b>{percent(marketResponse.recommendationData.recommended.risk)}</b></span>
+              <span>Liquidity <b>{percent(marketResponse.recommendationData.recommended.liquidity)}</b></span>
+            </div>
+          </div>
         ) : null}
       </article>
 
-      {/* Show explanation only if it relates to optimization, otherwise keep it general, but since explanation state is shared and updated upon Optimization, we can show it here if it exists. */}
-      {explanation && explanation.decision.includes('OPTIMIZ') && <ExplanationCard key={explanation.decisionId || Date.now()} explanation={explanation} />}
     </div>
   )
 }

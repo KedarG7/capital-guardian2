@@ -37,6 +37,11 @@ export default function WhatIf({
     <div className="max-w-4xl mx-auto pt-6 pb-12">
       <article className="panel action-panel mb-8">
         <SectionHeading kicker="Scenario lab" title="What-if market simulator"><span className="panel-index">02</span></SectionHeading>
+        <div className="mb-6 bg-blue-50/50 border border-blue-100 rounded-lg p-4">
+          <p className="text-sm text-blue-800 m-0">
+            <strong>Note:</strong> This is a hypothetical simulation laboratory. To see real-time detected market conditions and their actual impact, see the <strong>Market Guardian</strong> section on the Overview page.
+          </p>
+        </div>
         <p className="panel-copy">Test how the portfolio behaves under hypothetical market conditions.</p>
         
         <label className="field-label" htmlFor="scenario">Scenario</label>
@@ -66,7 +71,7 @@ export default function WhatIf({
             async () => { 
               const { simulateScenario, getExplanation } = await import('../services/api.js');
               const result = await simulateScenario(portfolio, scenarioPayload); 
-              return { result, explanation: await getExplanation(result) } 
+              return { result, explanation: await getExplanation({ type: 'WHAT_IF', scenario: scenarioPayload }) } 
             }, 
             ({ result, explanation: nextExplanation }) => { 
               setSimulation(result); 
@@ -91,7 +96,7 @@ export default function WhatIf({
                     async () => { 
                       const { generateControlRecommendation, getExplanation } = await import('../services/api.js');
                       const result = await generateControlRecommendation(portfolio, simulation.riskAssessment, simulation); 
-                      return { result, explanation: await getExplanation(result) } 
+                      return { result, explanation: await getExplanation({ type: 'CONTROL', scenario: scenarioPayload, eventId: result.decisionEventId }) } 
                     }, 
                     ({ result, explanation: nextExplanation }) => { 
                       setControl(result)

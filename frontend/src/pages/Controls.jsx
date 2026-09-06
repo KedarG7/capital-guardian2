@@ -30,37 +30,34 @@ export default function Controls({
         </section>
       ) : null}
 
-      {marketResponse?.events?.length > 0 && (
+      {marketResponse?.detection?.detected && (
         <section className="panel mb-8 p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-          <SectionHeading kicker="Market Event" title="System Response Context" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Market Event</span>
-              <div className="mt-2 text-sm text-gray-800">
-                {marketResponse.events.map((e, i) => (
-                  <div key={i}>{e.asset} {e.changePercent > 0 ? 'increased' : 'declined'} {Math.abs(e.changePercent).toFixed(1)}%</div>
-                ))}
-              </div>
+          <SectionHeading kicker="Chain of Events" title="System Response Context" />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+            <div className="bg-gray-50 p-4 rounded-lg flex flex-col justify-center">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Market Event</span>
+              <strong className="text-gray-900 mb-1">{marketResponse.detection.severity}</strong>
+              <span className="text-xs text-gray-500">{marketResponse.detection.direction}</span>
             </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Risk Response</span>
-              <div className="mt-2 text-sm text-gray-800">
-                Portfolio risk moved to <span className="font-semibold">{marketResponse.risk.status}</span>
-              </div>
+            <div className="bg-gray-50 p-4 rounded-lg flex flex-col justify-center border-l-4 border-gray-200">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Risk Assessment</span>
+              <strong className="text-gray-900 mb-1">{marketResponse.risk.status}</strong>
+              <span className="text-xs text-gray-500">Utilization {percent(marketResponse.risk.riskUtilization)}</span>
             </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Control Action</span>
-              <div className="mt-2 text-sm text-gray-800 font-semibold">
-                {marketResponse.recommendation.action.replace(/_/g, ' ')}
-              </div>
+            <div className="bg-gray-50 p-4 rounded-lg flex flex-col justify-center border-l-4 border-gray-200">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Control Decision</span>
+              <strong className="text-gray-900 mb-1">{marketResponse.recommendationData?.decision?.status?.replace(/_/g, ' ') || 'NO ACTION'}</strong>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-lg flex flex-col justify-center border-l-4 border-gray-200">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Recommendation</span>
+              <strong className="text-gray-900 mb-1">
+                {!marketResponse.recommendationData || marketResponse.recommendationData.decision?.status === 'NO_RECOMMENDATION' ? 'Hold' : 'Rebalance'}
+              </strong>
             </div>
           </div>
-          {marketResponse.controlDecision?.recommended && (
-            <div className="mt-6 pt-4 border-t border-gray-100">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Recommended Change</span>
-              <AllocationChanges changes={marketResponse.controlDecision.changes} />
-            </div>
-          )}
+          <div className="mt-6 text-sm text-gray-500 bg-gray-50 p-3 rounded italic text-center">
+            * This is a recommendation only. No trades have been executed.
+          </div>
         </section>
       )}
 
@@ -75,7 +72,7 @@ export default function Controls({
                 async () => { 
                   const { generateControlRecommendation, getExplanation } = await import('../services/api.js');
                   const result = await generateControlRecommendation(portfolio, currentRisk, simulation); 
-                  return { result, explanation: await getExplanation(result) } 
+                  return { result, explanation: await getExplanation({ type: 'CONTROL', scenario: simulation.scenario, eventId: result.decisionEventId }) } 
                 }, 
                 ({ result, explanation: nextExplanation }) => { 
                   setControl(result); 
