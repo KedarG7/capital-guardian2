@@ -76,7 +76,7 @@ cd backend
 npm run dev
 ```
 
-The backend listens on port `5000` by default. Set `PORT` in a local `.env` file if needed. MongoDB is not required to start the server.
+The backend listens on port `5001` by default in this workspace. Set `PORT` in a local `.env` file if needed. MongoDB is not required to start the server.
 
 ## Health endpoint
 

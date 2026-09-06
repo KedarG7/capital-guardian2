@@ -22,6 +22,8 @@ import {
   listControlHistory,
 } from '../services/database/persistence.js'
 import { generateExplanation } from '../services/explainability/explainability-service.js'
+import { getMarketIntelligence } from '../services/market-intelligence-service.js'
+import { buildPortfolioPdf } from '../services/report-service.js'
 
 function requireBody(request) {
   if (!request.body || typeof request.body !== 'object' || Array.isArray(request.body)) {
@@ -74,7 +76,7 @@ export async function getPortfolioController(request, response) {
     ? await runDatabase(() => findLatestPortfolioRecord(request.user.id))
     : null
   const portfolio = toPortfolioConfiguration(stored) || demoPortfolio
-  response.json({ success: true, data: runEngine(() => getPortfolioData(portfolio)) })
+  response.json({ success: true, data: { ...runEngine(() => getPortfolioData(portfolio)), isOnboarded: Boolean(stored) } })
 }
 
 export async function savePortfolioController(request, response) {
@@ -157,4 +159,14 @@ export function scenariosController(_request, response) {
 export function explainController(request, response) {
   const body = requireBody(request)
   response.json({ success: true, data: generateExplanation(body.result ?? body.analysis ?? body) })
+}
+
+export async function marketIntelligenceController(request, response) {
+  response.json({ success: true, data: await getMarketIntelligence(request.body?.portfolio ?? request.body ?? {}) })
+}
+
+export function reportController(request, response) {
+  const pdf = buildPortfolioPdf(requireBody(request))
+  response.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="capital-guardian-report.pdf"' })
+  response.send(pdf)
 }

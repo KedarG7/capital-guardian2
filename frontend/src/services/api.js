@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 
 async function request(path, options = {}) {
   const token = localStorage.getItem('token')
@@ -30,8 +30,10 @@ function post(path, body) {
     body: JSON.stringify(body),
   })
 }
+function patch(path, body) { return request(path, { method: 'PATCH', body: JSON.stringify(body) }) }
 
 export const getPortfolio = () => request('/portfolio')
+export const savePortfolio = (portfolio) => post('/portfolio', portfolio)
 export const getScenarios = () => request('/scenarios')
 export const optimizePortfolio = (portfolio) => post('/optimize', portfolio)
 export const assessRisk = (portfolio) => post('/risk', portfolio)
@@ -46,3 +48,19 @@ export const getExplanation = (result) => post('/explain', result)
 export const login = (credentials) => post('/auth/login', credentials)
 export const register = (credentials) => post('/auth/register', credentials)
 export const getCurrentUser = () => request('/auth/me')
+export const updateCurrentUser = (profile) => patch('/auth/me', profile)
+export const deleteCurrentUser = () => request('/auth/me', { method: 'DELETE' })
+export const getMarketIntelligence = (portfolio) => post('/market-intelligence', { portfolio })
+export const saveAnalysis = (result) => post('/analysis', { result })
+export const saveSimulation = (result) => post('/scenarios/results', { result })
+export const saveControl = (result) => post('/control/history', { result })
+export const getAnalysisHistory = () => request('/analysis/history')
+export const getSimulationHistory = () => request('/scenarios/history')
+export const getControlHistory = () => request('/control/history')
+export async function downloadReport(payload) {
+  const token = localStorage.getItem('token')
+  const response = await fetch(`${API_URL}/report`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(payload) })
+  if (!response.ok) throw new Error('The PDF report could not be generated.')
+  const url = URL.createObjectURL(await response.blob()); const link = document.createElement('a')
+  link.href = url; link.download = 'capital-guardian-report.pdf'; link.click(); URL.revokeObjectURL(url)
+}

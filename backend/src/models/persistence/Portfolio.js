@@ -2,6 +2,8 @@ import mongoose from 'mongoose'
 
 const assetSnapshotSchema = new mongoose.Schema({
   assetId: { type: String, required: true },
+  label: { type: String },
+  ticker: { type: String },
   expectedReturn: { type: Number, required: true },
   volatility: { type: Number, required: true },
   liquidityScore: { type: Number, required: true },

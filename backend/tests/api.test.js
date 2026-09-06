@@ -75,6 +75,7 @@ test('CORS preflight allows the configured local frontend origin', async () => {
 
   assert.equal(response.status, 204)
   assert.equal(response.headers.get('access-control-allow-origin'), 'http://localhost:5173')
+  assert.equal(response.headers.get('access-control-allow-headers'), 'Content-Type, Authorization')
 })
 
 test('GET /api/portfolio returns demo portfolio data', async () => {

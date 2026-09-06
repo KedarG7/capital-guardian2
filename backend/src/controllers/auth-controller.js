@@ -1,5 +1,5 @@
 import { ApiError } from '../middleware/error-handler.js'
-import { loginUser, registerUser } from '../services/auth-service.js'
+import { deleteUser, loginUser, registerUser, updateUser } from '../services/auth-service.js'
 
 function requireBody(request) {
   if (!request.body || typeof request.body !== 'object' || Array.isArray(request.body)) {
@@ -45,4 +45,12 @@ export async function loginController(request, response) {
 
 export async function meController(request, response) {
   response.json({ success: true, data: { user: request.user } })
+}
+
+export async function updateMeController(request, response) {
+  try { response.json({ success: true, data: { user: await updateUser(request.user.id, requireBody(request)) } }) } catch (error) { throw translateAuthError(error) }
+}
+
+export async function deleteMeController(request, response) {
+  try { await deleteUser(request.user.id); response.status(204).end() } catch (error) { throw translateAuthError(error) }
 }

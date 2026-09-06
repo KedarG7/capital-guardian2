@@ -8,7 +8,7 @@ export function corsMiddleware(request, response, next) {
   }
 
   response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-  response.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 
   if (request.method === 'OPTIONS') {
     response.status(204).end()

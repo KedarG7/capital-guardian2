@@ -64,6 +64,20 @@ export async function getUserById(userId) {
   return user ? safeUser(user) : null
 }
 
+export async function updateUser(userId, input) {
+  if (typeof input.name !== 'string' || input.name.trim().length < 2) throw new Error('Name must contain at least 2 characters.')
+  await connectDatabase()
+  const user = await User.findByIdAndUpdate(userId, { name: input.name.trim() }, { new: true })
+  if (!user) throw new Error('User not found.')
+  return safeUser(user)
+}
+
+export async function deleteUser(userId) {
+  await connectDatabase()
+  await User.findByIdAndDelete(userId)
+  return true
+}
+
 export function safeUserFromToken(payload) {
   return { id: payload.sub, name: payload.name || payload.email, email: payload.email }
 }

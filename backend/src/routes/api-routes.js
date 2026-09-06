@@ -15,6 +15,8 @@ import {
   saveControlDecisionController,
   controlHistoryController,
   explainController,
+  marketIntelligenceController,
+  reportController,
 } from '../controllers/api-controller.js'
 import { asyncHandler } from '../middleware/async-handler.js'
 
@@ -29,6 +31,8 @@ router.post('/control', controlController)
 router.post('/analyze', analyzeController)
 router.get('/scenarios', scenariosController)
 router.post('/explain', explainController)
+router.post('/market-intelligence', marketIntelligenceController)
+router.post('/report', reportController)
 router.post('/analysis', asyncHandler(saveAnalysisController))
 router.get('/analysis/history', asyncHandler(analysisHistoryController))
 router.post('/scenarios/results', asyncHandler(saveScenarioResultController))

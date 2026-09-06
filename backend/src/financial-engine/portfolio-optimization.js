@@ -164,7 +164,21 @@ export function optimizePortfolio(
     }
   }
 
-  generateAllocations(0, {}, 0)
+  // An exhaustive grid is precise for the standard four-asset plan, but grows
+  // exponentially when founders add assets. Use deterministic sampling beyond
+  // that threshold so the button always responds in a practical time.
+  if (assetIds.length <= 4) {
+    generateAllocations(0, {}, 0)
+  } else {
+    let seed = Math.round(portfolio.totalCapital) + assetIds.length
+    const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296 }
+    evaluateAllocation({ ...portfolio.allocations })
+    for (let attempt = 0; attempt < 25000; attempt += 1) {
+      const raw = assetIds.map(() => -Math.log(Math.max(random(), Number.EPSILON)))
+      const total = raw.reduce((sum, value) => sum + value, 0)
+      evaluateAllocation(Object.fromEntries(assetIds.map((assetId, index) => [assetId, raw[index] / total])))
+    }
+  }
 
   if (!bestCandidate) {
     throw new Error('No feasible portfolio allocation satisfies the current constraints.')

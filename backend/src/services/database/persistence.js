@@ -30,11 +30,15 @@ export function toPortfolioConfiguration(record) {
     minimumLiquidity: record.minimumLiquidity,
     ...(record.targetReturn === undefined ? {} : { targetReturn: record.targetReturn }),
     allocations: mapFromValue(record.allocations),
+    assets: record.assets || undefined,
   }
 }
 
 export async function savePortfolioRecord(portfolio, userId) {
-  validatePortfolio(portfolio, assetConfiguration)
+  const assets = Array.isArray(portfolio.assets) && portfolio.assets.length
+    ? Object.fromEntries(portfolio.assets.map((asset) => [asset.assetId, asset]))
+    : assetConfiguration
+  validatePortfolio(portfolio, assets)
   await connectDatabase()
 
   const record = await Portfolio.create({
@@ -44,7 +48,7 @@ export async function savePortfolioRecord(portfolio, userId) {
     minimumLiquidity: portfolio.minimumLiquidity,
     targetReturn: portfolio.targetReturn,
     allocations: portfolio.allocations,
-    assets: portfolioAssets(),
+    assets: Array.isArray(portfolio.assets) && portfolio.assets.length ? portfolio.assets : portfolioAssets(),
   })
 
   return plain(record)

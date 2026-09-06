@@ -5,10 +5,17 @@ import { optimizePortfolio } from '../financial-engine/portfolio-optimization.js
 import { assessPortfolioRisk } from '../financial-engine/risk-assessment.js'
 import { simulateMarketShock, demoShockScenarios } from '../shock-engine/market-shock.js'
 import { evaluateControl } from '../control-engine/control-rebalancing.js'
+import { runMonteCarlo } from '../financial-engine/monte-carlo.js'
+
+export function resolveAssets(portfolio = {}) {
+  if (!Array.isArray(portfolio.assets) || portfolio.assets.length === 0) return assetConfiguration
+  return Object.fromEntries(portfolio.assets.map((asset) => [asset.assetId, { ...asset, minimumAllocation: asset.minimumAllocation ?? 0, maximumAllocation: asset.maximumAllocation ?? 1 }]))
+}
 
 export function getPortfolioData(portfolio = demoPortfolio) {
-  const metrics = calculatePortfolioMetrics(portfolio, assetConfiguration)
-  const risk = assessPortfolioRisk(portfolio, assetConfiguration, metrics)
+  const assets = resolveAssets(portfolio)
+  const metrics = calculatePortfolioMetrics(portfolio, assets)
+  const risk = assessPortfolioRisk(portfolio, assets, metrics)
 
   return {
     configuration: portfolio,
@@ -18,27 +25,33 @@ export function getPortfolioData(portfolio = demoPortfolio) {
 }
 
 export function optimizePortfolioData(portfolio) {
-  return optimizePortfolio(portfolio, assetConfiguration)
+  const assets = resolveAssets(portfolio)
+  const optimization = optimizePortfolio(portfolio, assets)
+  return { ...optimization, monteCarlo: runMonteCarlo({ ...portfolio, allocations: optimization.allocation }, assets) }
 }
 
 export function assessPortfolioData(portfolio) {
-  const metrics = calculatePortfolioMetrics(portfolio, assetConfiguration)
-  return assessPortfolioRisk(portfolio, assetConfiguration, metrics)
+  const assets = resolveAssets(portfolio)
+  const metrics = calculatePortfolioMetrics(portfolio, assets)
+  return assessPortfolioRisk(portfolio, assets, metrics)
 }
 
 export function simulatePortfolioData(portfolio, scenario) {
-  return simulateMarketShock(portfolio, scenario, assetConfiguration)
+  return simulateMarketShock(portfolio, scenario, resolveAssets(portfolio))
 }
 
 export function evaluateControlData(portfolio, riskAssessment, shockedPortfolio) {
-  return evaluateControl(portfolio, riskAssessment, assetConfiguration, shockedPortfolio)
+  const assets = resolveAssets(portfolio)
+  const control = evaluateControl(portfolio, riskAssessment, assets, shockedPortfolio)
+  return { ...control, monteCarlo: control.recommended ? runMonteCarlo({ ...portfolio, allocations: control.recommended.allocation }, assets) : null }
 }
 
 export function analyzePortfolioData(portfolio) {
-  const metrics = calculatePortfolioMetrics(portfolio, assetConfiguration)
-  const optimization = optimizePortfolio(portfolio, assetConfiguration)
-  const risk = assessPortfolioRisk(portfolio, assetConfiguration, metrics)
-  const control = evaluateControl(portfolio, risk, assetConfiguration)
+  const assets = resolveAssets(portfolio)
+  const metrics = calculatePortfolioMetrics(portfolio, assets)
+  const optimization = optimizePortfolioData(portfolio)
+  const risk = assessPortfolioRisk(portfolio, assets, metrics)
+  const control = evaluateControlData(portfolio, risk)
 
   return {
     portfolio: {

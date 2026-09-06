@@ -1,0 +1,89 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 3388 >>
+stream
+0.96 0.98 0.97 rg 0 0 595 842 re f
+0.05 0.27 0.26 rg 0 680 595 162 re f
+0.08 0.54 0.47 rg 0 674 595 6 re f
+BT /F2 9 Tf 0.64 0.86 0.79 rg 1 0 0 1 48 790 Tm (CAPITAL GUARDIAN) Tj ET
+BT /F2 27 Tf 1 1 1 rg 1 0 0 1 48 750 Tm (Founder investment) Tj ET
+BT /F2 27 Tf 1 1 1 rg 1 0 0 1 48 718 Tm (readiness report) Tj ET
+BT /F1 9 Tf 0.77 0.89 0.85 rg 1 0 0 1 48 695 Tm (Prepared 6/9/2026) Tj ET
+BT /F2 8 Tf 0.64 0.86 0.79 rg 1 0 0 1 405 782 Tm (SAVED CAPITAL PLAN) Tj ET
+BT /F2 16 Tf 1 1 1 rg 1 0 0 1 405 754 Tm (INR 25,00,000) Tj ET
+1 1 1 rg 48 605 114 50 re f
+BT /F2 7 Tf 0.38 0.50 0.47 rg 1 0 0 1 58 640 Tm (TOTAL CAPITAL) Tj ET
+BT /F2 13 Tf 0.08 0.29 0.28 rg 1 0 0 1 58 619 Tm (INR 25,00,000) Tj ET
+1 1 1 rg 174 605 114 50 re f
+BT /F2 7 Tf 0.38 0.50 0.47 rg 1 0 0 1 184 640 Tm (EXPECTED RETURN) Tj ET
+BT /F2 13 Tf 0.08 0.29 0.28 rg 1 0 0 1 184 619 Tm (9.5%) Tj ET
+1 1 1 rg 300 605 114 50 re f
+BT /F2 7 Tf 0.38 0.50 0.47 rg 1 0 0 1 310 640 Tm (RISK LIMIT) Tj ET
+BT /F2 13 Tf 0.08 0.29 0.28 rg 1 0 0 1 310 619 Tm (35.0%) Tj ET
+1 1 1 rg 426 605 114 50 re f
+BT /F2 7 Tf 0.38 0.50 0.47 rg 1 0 0 1 436 640 Tm (LIQUIDITY FLOOR) Tj ET
+BT /F2 13 Tf 0.08 0.29 0.28 rg 1 0 0 1 436 619 Tm (15.0%) Tj ET
+BT /F2 16 Tf 0.08 0.29 0.28 rg 1 0 0 1 48 568 Tm (Portfolio allocation) Tj ET
+BT /F1 9 Tf 0.38 0.50 0.47 rg 1 0 0 1 48 550 Tm (Saved asset mix used for your simulations and recommendations.) Tj ET
+BT /F2 9 Tf 0.12 0.31 0.30 rg 1 0 0 1 48 518 Tm (EQUITY) Tj ET
+0.87 0.92 0.89 rg 166 515 340 8 re f
+0.11 0.42 0.40 rg 166 515 153 8 re f
+BT /F2 9 Tf 0.12 0.31 0.30 rg 1 0 0 1 520 518 Tm (45.0%) Tj ET
+BT /F2 9 Tf 0.12 0.31 0.30 rg 1 0 0 1 48 491 Tm (BONDS) Tj ET
+0.87 0.92 0.89 rg 166 488 340 8 re f
+0.08 0.54 0.47 rg 166 488 85 8 re f
+BT /F2 9 Tf 0.12 0.31 0.30 rg 1 0 0 1 520 491 Tm (25.0%) Tj ET
+BT /F2 9 Tf 0.12 0.31 0.30 rg 1 0 0 1 48 464 Tm (GOLD) Tj ET
+0.87 0.92 0.89 rg 166 461 340 8 re f
+0.11 0.42 0.40 rg 166 461 51 8 re f
+BT /F2 9 Tf 0.12 0.31 0.30 rg 1 0 0 1 520 464 Tm (15.0%) Tj ET
+BT /F2 9 Tf 0.12 0.31 0.30 rg 1 0 0 1 48 437 Tm (CASH) Tj ET
+0.87 0.92 0.89 rg 166 434 340 8 re f
+0.08 0.54 0.47 rg 166 434 51 8 re f
+BT /F2 9 Tf 0.12 0.31 0.30 rg 1 0 0 1 520 437 Tm (15.0%) Tj ET
+0.89 0.95 0.92 rg 48 325 499 78 re f
+BT /F2 8 Tf 0.08 0.45 0.39 rg 1 0 0 1 66 382 Tm (LATEST SIMULATED PORTFOLIO) Tj ET
+BT /F2 14 Tf 0.08 0.29 0.28 rg 1 0 0 1 66 354 Tm (Founder runway stress test) Tj ET
+BT /F1 9 Tf 0.28 0.42 0.39 rg 1 0 0 1 66 336 Tm (After shock: INR 22,20,000 | Change: -11.2%) Tj ET
+BT /F2 16 Tf 0.08 0.29 0.28 rg 1 0 0 1 48 285 Tm (Optimization and control) Tj ET
+BT /F1 10 Tf 0.28 0.42 0.39 rg 1 0 0 1 48 264 Tm (Recommendation: REBALANCE RECOMMENDED) Tj ET
+1 1 1 rg 48 170 499 70 re f
+BT /F2 8 Tf 0.08 0.45 0.39 rg 1 0 0 1 66 217 Tm (MONTE CARLO VALIDATION) Tj ET
+BT /F2 12 Tf 0.08 0.29 0.28 rg 1 0 0 1 66 190 Tm (5,000 simulated paths) Tj ET
+BT /F2 10 Tf 0.08 0.29 0.28 rg 1 0 0 1 265 191 Tm (Median INR 27,40,000) Tj ET
+BT /F1 9 Tf 0.28 0.42 0.39 rg 1 0 0 1 265 173 Tm (95% downside INR 3,10,000 | loss probability 19.0%) Tj ET
+0.82 0.89 0.86 RG 0.7 w 48 110 m 547 110 l S
+BT /F1 8 Tf 0.38 0.50 0.47 rg 1 0 0 1 48 88 Tm (Capital Guardian - founder-ready portfolio planning) Tj ET
+BT /F1 8 Tf 0.38 0.50 0.47 rg 1 0 0 1 48 72 Tm (Decision-support only. Not investment advice. Market values and simulations are estimates.) Tj ET
+BT /F2 8 Tf 0.38 0.50 0.47 rg 1 0 0 1 520 72 Tm (1 / 1) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000003691 00000 n 
+0000003761 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+3836
+%%EOF
