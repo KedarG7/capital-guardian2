@@ -28,6 +28,7 @@ export function errorHandler(error, _request, response, _next) {
     return
   }
 
+  console.error('Unexpected server error:', error)
   response.status(500).json({
     success: false,
     error: {

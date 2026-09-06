@@ -1,8 +1,26 @@
+const DEV_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:5175',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5175',
+]
+
 export function corsMiddleware(request, response, next) {
-  const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173'
+  const envOrigin = process.env.FRONTEND_URL
+  const isProduction = process.env.NODE_ENV === 'production'
+
+  const allowedOrigins = isProduction
+    ? [envOrigin].filter(Boolean)
+    : Array.from(
+        new Set([
+          ...DEV_ORIGINS,
+          ...(envOrigin ? envOrigin.split(',').map((o) => o.trim()) : []),
+        ])
+      )
+
   const requestOrigin = request.headers.origin
 
-  if (requestOrigin === allowedOrigin) {
+  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
     response.setHeader('Access-Control-Allow-Origin', requestOrigin)
     response.setHeader('Vary', 'Origin')
   }

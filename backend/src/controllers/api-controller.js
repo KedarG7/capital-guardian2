@@ -410,8 +410,13 @@ export async function explainController(request, response) {
     } else if (body.type === 'WHAT_IF') {
       payload = simulateMarketShock(portfolio, body.scenario)
     } else if (body.type === 'CONTROL') {
-      const shocked = simulateMarketShock(portfolio, body.scenario)
-      payload = evaluateControlData(portfolio, shocked.riskAssessment, shocked.shockedPortfolio)
+      if (body.scenario) {
+        const shocked = simulateMarketShock(portfolio, body.scenario)
+        payload = evaluateControlData(portfolio, shocked.riskAssessment, shocked)
+      } else {
+        const riskAssessment = assessPortfolioData(portfolio)
+        payload = evaluateControlData(portfolio, riskAssessment, null)
+      }
     } else if (body.type === 'ANALYSIS') {
       payload = analyzePortfolioData(portfolio)
     }

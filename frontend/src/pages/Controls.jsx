@@ -72,7 +72,7 @@ export default function Controls({
                 async () => { 
                   const { generateControlRecommendation, getExplanation } = await import('../services/api.js');
                   const result = await generateControlRecommendation(portfolio, currentRisk, simulation); 
-                  return { result, explanation: await getExplanation({ type: 'CONTROL', scenario: simulation.scenario, eventId: result.decisionEventId }) } 
+                  return { result, explanation: await getExplanation({ type: 'CONTROL', scenario: simulation?.scenario, eventId: result.decisionEventId }) } 
                 }, 
                 ({ result, explanation: nextExplanation }) => { 
                   setControl(result); 
